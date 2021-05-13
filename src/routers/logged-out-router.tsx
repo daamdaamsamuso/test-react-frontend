@@ -1,8 +1,9 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import { CreateAccount } from "../pages/CreateAccount";
-import { Login } from "../pages/Login";
+import { CreateAccount } from "../pages/create-account";
+import { Login } from "../pages/login";
+
 
 export const LoggedOutRouter = () => {
   return (

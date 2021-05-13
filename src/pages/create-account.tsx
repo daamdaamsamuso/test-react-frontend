@@ -1,67 +1,72 @@
 import { gql, useMutation } from "@apollo/client";
 import React from "react";
-import { Helmet, HelmetProvider } from "react-helmet-async";
+import { Helmet } from "react-helmet-async";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
-import { authTokenVar, isLoggedInVar } from "../apollo";
+import { Link, useHistory } from "react-router-dom";
 import { Button } from "../components/button";
 import { FormError } from "../components/form-error";
-import { LOCALSTORAGE_TOKEN } from "../constants";
 import sdiLogo from "../images/logo.svg";
 import {
-  loginMutation,
-  loginMutationVariables,
-} from "../__generated__/loginMutation";
+  createAccountMutation,
+  createAccountMutationVariables,
+} from "../__generated__/createAccountMutation";
+import { UserRole } from "../__generated__/globalTypes";
 
-const LOGIN_MUTATION = gql`
-  mutation loginMutation($loginInput: LoginInput!) {
-    login(input: $loginInput) {
+const CREATE_ACCOUNT_MUTATION = gql`
+  mutation createAccountMutation($createAccountInput: CreateAccountInput!) {
+    createAccount(input: $createAccountInput) {
       ok
-      token
       error
     }
   }
 `;
 
-interface ILoginForm {
+interface ICreateAccountForm {
   email: string;
   password: string;
+  role: UserRole;
 }
 
-export const Login = () => {
-  const { register, getValues, errors, handleSubmit, formState } =
-    useForm<ILoginForm>({
+export const CreateAccount = () => {
+  const { register, getValues, watch, errors, handleSubmit, formState } =
+    useForm<ICreateAccountForm>({
       mode: "onChange",
+      defaultValues: {
+        role: UserRole.Client,
+      },
     });
-  const onCompleted = (data: loginMutation) => {
+
+  const history = useHistory();
+  const onCompleted = (data: createAccountMutation) => {
     const {
-      login: { ok, token },
+      createAccount: { ok, error },
     } = data;
-    if (ok&&token) {
-      localStorage.setItem(LOCALSTORAGE_TOKEN,token);
-      authTokenVar(token);
-      isLoggedInVar(true);
+    if (ok) {
+      alert('Account Created! Log in now!');
+      history.push("/login");
     }
   };
-  const [loginMutation, { data: loginMutationResult, loading }] = useMutation<
-    loginMutation,
-    loginMutationVariables
-  >(LOGIN_MUTATION, {
-    onCompleted,
-  });
+
+  const [
+    createAccountMutation,
+    { loading, data: createAccountMutationResult },
+  ] = useMutation<createAccountMutation, createAccountMutationVariables>(
+    CREATE_ACCOUNT_MUTATION,
+    {
+      onCompleted,
+    }
+  );
   const onSubmit = () => {
     if (!loading) {
-      const { email, password } = getValues();
-      loginMutation({
+      const { email, password, role } = getValues();
+      createAccountMutation({
         variables: {
-          loginInput: {
-            email,
-            password,
-          },
+          createAccountInput: { email, password, role },
         },
       });
     }
   };
+  console.log(watch());
   return (
     <div className="h-screen flex items-center flex-col mt-10 lg:mt-28">
       <Helmet>
@@ -70,7 +75,7 @@ export const Login = () => {
       <div className="w-full max-w-screen-sm flex flex-col px-5 items-center">
         <img src={sdiLogo} className="w-52 mb-10" alt="logo" />
         <h4 className="w-full font-medium text-left text-1xl mb-5">
-          Welcome to SDI
+          Les's get started
         </h4>
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -108,19 +113,31 @@ export const Login = () => {
           {errors.password?.type === "minLength" && (
             <FormError errorMessage="Password must be more than 10 chars." />
           )}
+          <select
+            name="role"
+            ref={register({ required: true })}
+            className="input"
+          >
+            {Object.keys(UserRole).map((role, index) => (
+              <option key={index}>{role}</option>
+            ))}
+          </select>
           <Button
             canClick={formState.isValid}
             loading={loading}
-            actionText={"Log in"}
+            actionText={"Create Account"}
           />
-          {loginMutationResult?.login.error && (
-            <FormError errorMessage={loginMutationResult.login.error} />
+
+          {createAccountMutationResult?.createAccount.error && (
+            <FormError
+              errorMessage={createAccountMutationResult.createAccount.error}
+            />
           )}
         </form>
         <div>
-          New to Nuber?{" "}
-          <Link to="/create-account" className="text-blue-600 hover:underline">
-            Create an Account
+          Already have account?{" "}
+          <Link to="/" className="text-blue-600 hover:underline">
+            Log in now
           </Link>
         </div>
       </div>
