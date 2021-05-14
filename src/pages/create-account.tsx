@@ -43,7 +43,7 @@ export const CreateAccount = () => {
     } = data;
     if (ok) {
       alert('Account Created! Log in now!');
-      history.push("/login");
+      history.push("/");
     }
   };
 
